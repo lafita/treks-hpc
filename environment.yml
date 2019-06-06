@@ -1,0 +1,8 @@
+name: treks
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - muscle =3.8
+  - clustalw =2.1
+  - openjdk
