@@ -3,43 +3,49 @@ T-REKS high performance version
 
 T-REKS is a k-means based algorithm for the identification of tandem repeats in protein and nucleotide sequences [1].
 
-This repository contains a modified version of the T-REKS method with improved performance for large scale analyses. Below is a list of the modifications and improvements.
+This repository contains a modified version of the T-REKS method with improved performance for large scale analyses in HPC clusters.
+Below is a list of the modifications.
 
-The original Java source code of the T-REKS algorithm and web-server version from the authors can be found here: https://bioinfo.crbm.cnrs.fr/?route=tools&tool=3.
+The original Java source code, JAR file and T-REKS web-server are available here: https://bioinfo.crbm.cnrs.fr/?route=tools&tool=3.
+
+I would like to thank the T-REKS authors ([Dr. Andrey Kajava's team at the CRBM](http://www.crbm.cnrs.fr/en/team/structural-biocomputing-and-molecular-modelling/)) for providing the source code and their support running T-REKS. 
+All credit should be given to them citing the T-REKS publication [1].
 
 ### Changes from original version
 
 - Command line options
-	- Use `commons.cli` library to handle command line argument parsing
-	- Allow specifying only one external program (muscle or clustal)
-	- Set the SEED and minimum repeat region lengths from the CLI, to allow speedup when near-perfect repeats are searched
+	- Use `commons.cli` library to handle command line argument parsing.
+	- Make a requirement to specify one external alignment program (muscle or clustal), but not both (only one is used). Only external alignment is available so the `msaMode` in the origianl T-REKS version is always set to external.
+	- Add options to set the SEED and minimum repeat region lengths from the CLI, to allow faster analysis when near-perfect repeats (high sequence identity) and/or long repeats are searched.
 
 - Input
-	- Disable the GUI and database options - the only input available is a single FASTA file.
+	- Disable the database option - the only input available is a multi FASTA file of any length.
+	- Disable the GUI - only the command line is available. This was needed due to interferences between the command line and the GUI modes of the software that needed X11 forwarding and caused unpredictable errors.
 
 - Output
-	- Table output as tab separated and alignment output in stockholm format (easy to `grep` alignments)
-	- Print a long log message with every sequence processed and parameters used to standard out
-
-- Paralellization
-	- Use `Java parallel streams` to process multiple files concurrently
-	- Process sequences in each file concurrently
+	- Results stored in a table output as tab separated rows (one for each repeat region) and an alignment output in Stockholm format (easy to `grep` alignments).
+	- Print a log message to stdout with every sequence processed and whether repeats were found or not, to be able to check that all sequences were processed.
+	- Print parameters used and final count of sequences with repeats in the log as a further check.
 
 - Project organization
-	- Mavenize the project to handle dependencies and build an executable JAR file automatically.
-	- Code versioning with `git`.
-	- Upgrade to `muscle 3.8`, `clustalw 2.1` and up to `Java 11`,
+	- Use [Apache Maven](https://maven.apache.org/) to organize the project - this allows to handle dependencies and build an executable JAR file automatically.
+	- Start source code versioning with `git`.
+	- Upgrade to `muscle 3.8`, `clustalw 2.1` and make compatible up to `Java 11`.
 	- Provide Conda environment file to easily install dependencies.
 
-- Bugfixes
-	- `IndexOutOfBoundsException` in `RepeatBuilder.align()` method when repeats could not be aligned by the external program.
-	- Temporal files written to the path of external alignment executables did not allow running two T-REKS instances concurrently. Create temporal files with unique hash codes in the working directory instead.
-	- Fix the bug of writing the results to the output file specified in the `-outfile` option
-	- There was a bug with very large files not being split because the size of the file was saved in an `integer` - now changed to `long`.
-
+- Paralellization
+	- Use `Java parallel streams` to process the multiple files (in case of large files that need splitting) and sequences in each file concurrently.
+	- This version uses all cores available, and the speedup is almost perfect for up to 12 cores (tested). One caveat is that the more cores used the more memory is required - 12 cores would require about 10GB of RAM.
+	
 - Algorithmic
-	- Reduce the number of alignments needed to speedup repeat detection.
-	- Only alignment through external software allowed.
+	- Reduce the number of alignments needed to speedup repeat detection - the original version was re-trying the alignment with clustal by default after aligning with muscle (feature or bug?).
+	- Only alignment through external software - the source code for the custom alignment implemented in T-REKS was missing so the only option was to use an external alignment (muscle or clustal).
+	
+- Bugfixes
+	- `IndexOutOfBoundsException` thrown in `RepeatBuilder.align()` method when repeats could not be aligned by the external program: error fixed and ensure that if it happens again an `Exeption` will be thrown.
+	- Temporal files written to the path of external alignment executables did not allow running two T-REKS instances concurrently. Create temporal files with unique hash codes in the working directory instead.
+	- Fix the bug of writing the results to the output file specified in the `-outfile` option - the file was rewritten for every repeat and always ended up being blank.
+	- There was a bug with very large files not being split because the size of the file was saved in an `integer` - now changed to `long`.
 
 
 ### Usage
@@ -60,13 +66,13 @@ Install dependencies with Conda:
 conda env install -f environment.yml
 ```
 
-To build the project, clone the source code and use Maven inside the repository directory:
+To build the project from source, use Maven (inside this repository directory):
 
 ```
 mvn install
 ```
 
-The Jar file should be in the `target/` folder.
+The packaged JAR file should be in the `target/` folder.
 
 ### Original publication
 
