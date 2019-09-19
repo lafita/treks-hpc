@@ -63,7 +63,7 @@ This command takes about 5 minutes on a 4-core Intel processor.
 Install dependencies with Conda:
 
 ```
-conda env install -f environment.yml
+conda env create -f environment.yml
 ```
 
 To build the project from source, use Maven (inside this repository directory):
