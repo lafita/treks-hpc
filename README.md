@@ -64,6 +64,7 @@ Install dependencies with Conda:
 
 ```
 conda env create -f environment.yml
+conda activate treks
 ```
 
 To build the project from source, use Maven (inside this repository directory):
